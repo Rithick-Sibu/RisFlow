@@ -1,0 +1,2330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChronoFlow - Project Timeline & Work Tracker</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              200: '#c7d2fe',
+              300: '#a5b4fc',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Full screen scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.04);
+    }
+    .dark ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.35);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 0.6);
+    }
+    /* Steady fixed left column in timeline */
+    .sticky-col {
+      position: sticky;
+      left: 0;
+      z-index: 25;
+    }
+    .sticky-header-col {
+      position: sticky;
+      left: 0;
+      top: 0;
+      z-index: 35;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200 w-full overflow-x-hidden">
+
+  <!-- TOP FULL-SCREEN HEADER -->
+  <header class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 w-full px-4 sm:px-6">
+    <div class="flex items-center justify-between h-16 gap-3 w-full">
+      
+      <!-- Brand & Project Title -->
+      <div class="flex items-center gap-3 min-w-max">
+        <div id="appLogoIconBox" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+          <svg id="appLogoSvg" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 id="headerProjectTitle" class="font-bold text-lg text-slate-900 dark:text-white leading-tight cursor-pointer hover:text-brand-600 transition-colors" title="Click to rename project">Engineering Project Roadmap</h1>
+            <button id="btnEditProjectTitle" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" title="Edit Project Settings">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+            </button>
+          </div>
+          <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <span>Hardware • Mechanical • Software • Image Processing</span>
+            <span id="badgeAdminStatus" class="hidden px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Admin Privileges Active
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Toolbar (Rearrangeable & Customizable by Admin) -->
+      <div id="dynamicToolbarContainer" class="flex items-center gap-2 overflow-x-auto py-1">
+        
+        <!-- View Switcher -->
+        <div id="tbItemViews" class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 text-sm flex-shrink-0">
+          <button id="viewBtnTimeline" class="px-3 py-1 rounded-md font-medium transition-all bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <span>Timeline</span>
+          </button>
+          <button id="viewBtnBoard" class="px-3 py-1 rounded-md font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+            <span>Board</span>
+          </button>
+          <button id="viewBtnList" class="px-3 py-1 rounded-md font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            <span>List</span>
+          </button>
+        </div>
+
+        <!-- Add Task Button -->
+        <button id="btnNewTask" class="bg-brand-600 hover:bg-brand-700 text-white font-medium px-3 py-1.5 rounded-lg text-sm shadow-xs flex items-center gap-1.5 transition-colors flex-shrink-0">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          <span class="hidden md:inline">Add Task</span>
+        </button>
+
+        <!-- People Involved Roster Button -->
+        <button id="btnTeamDirectory" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 font-medium px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5 flex-shrink-0" title="View people involved & workloads">
+          <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+          <span class="hidden sm:inline">People</span>
+          <span id="badgePeopleCount" class="w-5 h-5 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 text-xs font-bold flex items-center justify-center">5</span>
+        </button>
+
+        <!-- GitHub Free Host Guide -->
+        <button id="btnGithubGuide" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 font-medium px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5 flex-shrink-0" title="Host on GitHub Pages">
+          <svg class="w-4 h-4 text-slate-800 dark:text-slate-100" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          <span class="hidden lg:inline">Host on GitHub</span>
+        </button>
+
+        <!-- Backup & Sync -->
+        <button id="btnDataMenu" class="p-2 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex-shrink-0" title="Data Backup & Sync">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button id="btnThemeToggle" class="p-2 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex-shrink-0" title="Toggle Theme">
+          <svg id="themeIconSun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9h-1m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+          <svg id="themeIconMoon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+        </button>
+
+        <!-- ADMIN BUTTON WITH PASSWORD 'RISIBU' -->
+        <div class="relative flex-shrink-0 pl-1 border-l border-slate-200 dark:border-slate-700">
+          <button id="btnAdminAuth" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 shadow-sm" title="Admin Mode (Password: RISIBU)">
+            <svg id="adminLockIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            <span id="adminBtnLabel">Admin</span>
+          </button>
+        </div>
+
+        <!-- Admin Customizer Button (Visible only when Admin is unlocked) -->
+        <button id="btnAdminCustomizer" class="hidden px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white shadow-xs flex items-center gap-1" title="Customize Icons, Toolbar, & Layout">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+          <span>Customize</span>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- FULL SCREEN MAIN CONTAINER -->
+  <main class="w-full flex-1 flex flex-col gap-4 p-4 sm:p-6 overflow-hidden">
+
+    <!-- KPI & METRICS SUMMARY CARDS (FULL WIDTH) -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
+      <!-- Pending Works Count -->
+      <div class="bg-white dark:bg-slate-900 rounded-xl p-3.5 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
+          <span class="text-xs font-semibold uppercase tracking-wider">Pending Works</span>
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span id="metricPendingCount" class="text-2xl font-bold text-slate-900 dark:text-white">0</span>
+          <span id="metricPendingTotalRatio" class="text-xs text-slate-400">of 0 tasks</span>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">Pending action items</p>
+      </div>
+
+      <!-- Time Needed to Complete -->
+      <div class="bg-white dark:bg-slate-900 rounded-xl p-3.5 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
+          <span class="text-xs font-semibold uppercase tracking-wider">Time Remaining</span>
+          <svg class="w-4 h-4 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span id="metricTimeRemaining" class="text-2xl font-bold text-brand-600 dark:text-brand-400">0h</span>
+          <span id="metricTimeRemainingDays" class="text-xs text-slate-400">(~0 work days)</span>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">Effort required to finish</p>
+      </div>
+
+      <!-- Total Workload & Done -->
+      <div class="bg-white dark:bg-slate-900 rounded-xl p-3.5 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
+          <span class="text-xs font-semibold uppercase tracking-wider">Total Workload</span>
+          <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span id="metricTotalWorkload" class="text-2xl font-bold text-slate-900 dark:text-white">0h</span>
+          <span id="metricCompletedWorkload" class="text-xs text-emerald-500 font-medium">0h completed</span>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">Across all workstreams</p>
+      </div>
+
+      <!-- Overall Completion & Deadline -->
+      <div class="bg-white dark:bg-slate-900 rounded-xl p-3.5 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
+          <span class="text-xs font-semibold uppercase tracking-wider">Overall Progress</span>
+          <span id="metricProgressPercentText" class="text-xs font-bold text-slate-900 dark:text-white">0%</span>
+        </div>
+        <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden my-1.5">
+          <div id="metricProgressBar" class="bg-gradient-to-r from-brand-500 to-emerald-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+        <div class="flex justify-between items-center text-[11px] text-slate-400">
+          <span id="metricTasksDoneCount">0 done</span>
+          <span id="metricDaysToDeadline" class="font-medium"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- FILTER & SCALE TOOLBAR -->
+    <section class="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-3 w-full">
+      
+      <!-- Filter Inputs -->
+      <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
+        <!-- Search bar -->
+        <div class="relative flex-1 min-w-[150px] max-w-xs">
+          <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <input id="filterSearch" type="text" placeholder="Search tasks, descriptions, or people..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <!-- Filter Status -->
+        <select id="filterStatus" class="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option value="ALL">All Statuses</option>
+          <option value="PENDING_ONLY">⚠️ Pending Works Only</option>
+          <option value="PENDING">To Do / Pending</option>
+          <option value="IN_PROGRESS">In Progress</option>
+          <option value="REVIEW">In Review</option>
+          <option value="COMPLETED">Completed</option>
+        </select>
+
+        <!-- Filter Person Involved -->
+        <select id="filterPerson" class="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option value="ALL">All People Involved</option>
+        </select>
+
+        <!-- Filter Category -->
+        <select id="filterCategory" class="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option value="ALL">All Categories</option>
+        </select>
+
+        <!-- Filter Priority -->
+        <select id="filterPriority" class="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option value="ALL">All Priorities</option>
+          <option value="HIGH">High Priority</option>
+          <option value="MEDIUM">Medium Priority</option>
+          <option value="LOW">Low Priority</option>
+        </select>
+      </div>
+
+      <!-- Timeline Scale & Today buttons -->
+      <div id="timelineControlBar" class="flex items-center gap-2">
+        <span class="text-xs font-semibold text-slate-400 uppercase hidden sm:inline">Scale:</span>
+        <div class="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium">
+          <button id="scaleBtnDays" class="px-2.5 py-1 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs">Days</button>
+          <button id="scaleBtnWeeks" class="px-2.5 py-1 rounded text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Weeks</button>
+          <button id="scaleBtnMonths" class="px-2.5 py-1 rounded text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Months</button>
+        </div>
+        <button id="btnScrollToday" class="px-2.5 py-1 text-xs font-semibold border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700" title="Jump timeline view to Today">Today</button>
+      </div>
+
+    </section>
+
+    <!-- VIEW 1: TIMELINE (STEADY TASK & STATUS COLUMN + HORIZONTAL SCROLL TIMELINE) -->
+    <section id="viewTimelineContainer" class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs flex-1 flex flex-col overflow-hidden relative min-h-[500px]">
+      
+      <!-- Timeline Top Legend & Instruction -->
+      <div class="px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs bg-slate-50/60 dark:bg-slate-800/40">
+        <div class="flex items-center gap-4 text-slate-600 dark:text-slate-400">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            <span>Pending</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
+            <span>In Progress</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span>Completed</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-xs bg-rose-500"></span>
+            <span>Today's Date Marker</span>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-400 font-medium">
+          🔒 <span class="text-slate-600 dark:text-slate-300 font-semibold">Left Column is Steady</span> — Scroll horizontally to browse dates
+        </div>
+      </div>
+
+      <!-- MAIN TIMELINE SCROLLER (Only the date canvas scrolls horizontally!) -->
+      <div id="timelineScrollArea" class="flex-1 overflow-x-auto overflow-y-auto w-full relative">
+        <div id="timelineViewport" class="relative pb-6 select-none">
+          <!-- Rendered dynamically by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Empty State for Timeline -->
+      <div id="timelineEmptyState" class="hidden p-12 text-center my-auto">
+        <div class="w-12 h-12 mx-auto rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-3">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <p class="font-semibold text-slate-700 dark:text-slate-300 text-sm">No tasks match your filter criteria</p>
+        <p class="text-xs text-slate-400 mt-1">Try resetting the search or person filter.</p>
+      </div>
+
+    </section>
+
+    <!-- VIEW 2: KANBAN BOARD VIEW -->
+    <section id="viewBoardContainer" class="hidden grid-cols-1 md:grid-cols-4 gap-4 flex-1 overflow-y-auto">
+      
+      <!-- Column: Pending -->
+      <div class="bg-slate-100/70 dark:bg-slate-900/50 rounded-xl p-3 border border-slate-200/80 dark:border-slate-800 flex flex-col gap-3 min-h-[480px]">
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            <h3 class="font-semibold text-sm text-slate-800 dark:text-slate-200">Pending (To Do)</h3>
+            <span id="countBoardPending" class="text-xs px-2 py-0.5 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold">0</span>
+          </div>
+          <button class="btnQuickAddInCol text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" data-status="PENDING" title="Add to Pending">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          </button>
+        </div>
+        <div id="boardColPending" class="flex-1 flex flex-col gap-2.5 overflow-y-auto"></div>
+      </div>
+
+      <!-- Column: In Progress -->
+      <div class="bg-slate-100/70 dark:bg-slate-900/50 rounded-xl p-3 border border-slate-200/80 dark:border-slate-800 flex flex-col gap-3 min-h-[480px]">
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
+            <h3 class="font-semibold text-sm text-slate-800 dark:text-slate-200">In Progress</h3>
+            <span id="countBoardInProgress" class="text-xs px-2 py-0.5 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold">0</span>
+          </div>
+          <button class="btnQuickAddInCol text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" data-status="IN_PROGRESS" title="Add to In Progress">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          </button>
+        </div>
+        <div id="boardColInProgress" class="flex-1 flex flex-col gap-2.5 overflow-y-auto"></div>
+      </div>
+
+      <!-- Column: In Review -->
+      <div class="bg-slate-100/70 dark:bg-slate-900/50 rounded-xl p-3 border border-slate-200/80 dark:border-slate-800 flex flex-col gap-3 min-h-[480px]">
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+            <h3 class="font-semibold text-sm text-slate-800 dark:text-slate-200">In Review</h3>
+            <span id="countBoardReview" class="text-xs px-2 py-0.5 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold">0</span>
+          </div>
+          <button class="btnQuickAddInCol text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" data-status="REVIEW" title="Add to Review">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          </button>
+        </div>
+        <div id="boardColReview" class="flex-1 flex flex-col gap-2.5 overflow-y-auto"></div>
+      </div>
+
+      <!-- Column: Completed -->
+      <div class="bg-slate-100/70 dark:bg-slate-900/50 rounded-xl p-3 border border-slate-200/80 dark:border-slate-800 flex flex-col gap-3 min-h-[480px]">
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <h3 class="font-semibold text-sm text-slate-800 dark:text-slate-200">Completed</h3>
+            <span id="countBoardCompleted" class="text-xs px-2 py-0.5 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold">0</span>
+          </div>
+          <button class="btnQuickAddInCol text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" data-status="COMPLETED" title="Add to Completed">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          </button>
+        </div>
+        <div id="boardColCompleted" class="flex-1 flex flex-col gap-2.5 overflow-y-auto"></div>
+      </div>
+
+    </section>
+
+    <!-- VIEW 3: DETAILED TABLE / LIST VIEW -->
+    <section id="viewListContainer" class="hidden bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs flex-1 flex flex-col overflow-hidden">
+      <div class="overflow-x-auto w-full flex-1">
+        <table class="w-full text-left text-sm text-slate-600 dark:text-slate-300">
+          <thead class="bg-slate-50 dark:bg-slate-800/80 text-xs uppercase font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
+            <tr>
+              <th class="px-4 py-3">Task & Details</th>
+              <th class="px-4 py-3">Category</th>
+              <th class="px-4 py-3">Status</th>
+              <th class="px-4 py-3">Priority</th>
+              <th class="px-4 py-3">People Involved</th>
+              <th class="px-4 py-3">Timeline Dates</th>
+              <th class="px-4 py-3 text-right">Effort</th>
+              <th class="px-4 py-3 text-right">Remaining</th>
+              <th class="px-4 py-3 text-center">Progress</th>
+              <th class="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="taskListTableBody" class="divide-y divide-slate-200 dark:divide-slate-800">
+            <!-- Populated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+      <div id="listEmptyState" class="hidden p-8 text-center text-slate-400 text-sm my-auto">
+        No tasks found matching your criteria.
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FULL SCREEN FOOTER -->
+  <footer class="border-t border-slate-200 dark:border-slate-800 py-3 text-xs text-slate-400 bg-white/70 dark:bg-slate-900/70 w-full px-4 sm:px-6">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-2 w-full">
+      <div class="flex items-center gap-3">
+        <span class="font-medium text-slate-600 dark:text-slate-300">ChronoFlow</span>
+        <span>•</span>
+        <span>Hardware • Mechanical • Software • Image Processing Roadmap</span>
+        <span>•</span>
+        <span id="footerAdminNotice" class="text-slate-400">Guest Mode</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <button id="btnQuickBackup" class="hover:text-slate-600 dark:hover:text-slate-200 underline">Quick Backup JSON</button>
+        <button id="btnRestoreSample" class="hover:text-slate-600 dark:hover:text-slate-200 underline">Load Sample Roadmap</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== MODALS & DRAWERS ==================== -->
+
+  <!-- MODAL: ADMIN LOGIN (Password: RISIBU) -->
+  <div id="modalAdminAuth" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95 duration-150">
+      <div class="text-center mb-4">
+        <div class="w-12 h-12 mx-auto rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 flex items-center justify-center mb-3 shadow-md">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        </div>
+        <h3 class="font-bold text-lg text-slate-900 dark:text-white">Admin Authentication</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Enter the secret password to unlock icon customization, toolbar rearranging, and admin controls.</p>
+      </div>
+
+      <form id="formAdminAuth" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">Admin Password</label>
+          <input id="inputAdminPassword" type="password" required placeholder="Enter password..." class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono">
+          <p id="adminAuthError" class="text-rose-500 text-xs mt-1 hidden">Incorrect password. Please try again.</p>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" id="btnCancelAdminAuth" class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>
+          <button type="submit" id="btnSubmitAdminAuth" class="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg text-xs font-bold shadow-sm">Unlock Admin</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADMIN PRIVILEGES & ICON CUSTOMIZER -->
+  <div id="modalAdminCustomizer" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="p-1.5 bg-amber-500/10 text-amber-600 rounded-lg font-bold text-xs uppercase tracking-wider">Admin Panel</span>
+          <h3 class="font-bold text-lg text-slate-900 dark:text-white">Customize Icons & Controls</h3>
+        </div>
+        <button id="btnCloseAdminCustomizer" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-6 text-sm">
+        
+        <!-- Icon Style Customization -->
+        <div>
+          <label class="block font-semibold text-slate-800 dark:text-slate-200 mb-1">Application Logo Icon</label>
+          <p class="text-xs text-slate-500 mb-3">Choose the visual icon displayed in the top branding bar:</p>
+          <div class="grid grid-cols-4 gap-2.5" id="adminIconSelectorGrid">
+            <button type="button" class="admin-icon-opt p-3 rounded-xl border border-brand-500 bg-brand-50/50 dark:bg-brand-950/40 flex flex-col items-center gap-1.5" data-icon="calendar">
+              <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+              <span class="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Calendar</span>
+            </button>
+            <button type="button" class="admin-icon-opt p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-400 flex flex-col items-center gap-1.5" data-icon="chart">
+              <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+              <span class="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Gantt</span>
+            </button>
+            <button type="button" class="admin-icon-opt p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-400 flex flex-col items-center gap-1.5" data-icon="rocket">
+              <svg class="w-6 h-6 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              <span class="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Launch</span>
+            </button>
+            <button type="button" class="admin-icon-opt p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-400 flex flex-col items-center gap-1.5" data-icon="compass">
+              <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span class="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Clock</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Rearrange Toolbar Icons & Buttons -->
+        <div>
+          <label class="block font-semibold text-slate-800 dark:text-slate-200 mb-1">Rearrange & Toggle Toolbar Buttons</label>
+          <p class="text-xs text-slate-500 mb-3">As Admin, you can reorder the items in the top bar:</p>
+          <div id="adminToolbarList" class="space-y-2"></div>
+        </div>
+
+        <!-- Admin Global Privileges -->
+        <div class="pt-2 border-t border-slate-200 dark:border-slate-800">
+          <label class="block font-semibold text-slate-800 dark:text-slate-200 mb-2">Admin Special Actions</label>
+          <div class="grid grid-cols-2 gap-3">
+            <button id="btnAdminLogout" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 text-left">
+              🔒 Exit Admin Mode
+            </button>
+            <button id="btnAdminClearCompleted" class="px-4 py-2 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded-lg text-xs font-semibold text-left">
+              🧹 Archive Completed Tasks
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="px-6 py-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+        <button id="btnSaveAdminCustomizer" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-bold shadow-xs">Apply Changes</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: PEOPLE INVOLVED DIRECTORY -->
+  <div id="modalTeam" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white">People Involved in the Work</h3>
+            <p class="text-xs text-slate-500">Track workloads, assigned pending works, and team member allocation</p>
+          </div>
+        </div>
+        <button id="btnCloseModalTeam" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-4">
+        <!-- Roster Grid -->
+        <div id="teamMemberListGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+
+        <!-- Add Person Form -->
+        <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
+          <h4 class="font-semibold text-xs text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">Add New Team Member</h4>
+          <div class="flex flex-wrap items-center gap-2">
+            <input id="inputNewPersonName" type="text" placeholder="Full Name (e.g. Rachel Zane)" class="flex-1 min-w-[140px] px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
+            <input id="inputNewPersonRole" type="text" placeholder="Role (e.g. Lead Designer)" class="flex-1 min-w-[140px] px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
+            <input id="inputNewPersonColor" type="color" value="#0ea5e9" class="w-8 h-8 rounded border-0 cursor-pointer">
+            <button id="btnAddNewPerson" class="px-3 py-1.5 text-xs font-semibold bg-brand-600 text-white rounded-lg shadow-xs">Add Person</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-6 py-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+        <button id="btnDoneModalTeam" class="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg text-xs font-bold">Done</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT PERSON -->
+  <div id="modalEditPerson" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+        <h3 class="font-bold text-base text-slate-900 dark:text-white">Edit Team Member</h3>
+        <button id="btnCloseModalEditPerson" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <form id="formEditPerson" class="py-4 space-y-3.5 text-xs">
+        <input type="hidden" id="editPersonId">
+        
+        <div>
+          <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Full Name <span class="text-rose-500">*</span></label>
+          <input id="editPersonName" type="text" required class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Role / Job Title</label>
+          <input id="editPersonRole" type="text" class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Avatar & Badge Color</label>
+          <div class="flex items-center gap-3">
+            <input id="editPersonColor" type="color" class="w-10 h-10 rounded-lg border-0 cursor-pointer">
+            <span class="text-slate-500 text-[11px]">Choose a distinct color for this person's avatar chips.</span>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <button type="button" id="btnDeletePersonFromModal" class="px-3 py-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg font-semibold text-xs flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            Delete Person
+          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" id="btnCancelEditPerson" class="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300">Cancel</button>
+            <button type="submit" id="btnSaveEditPerson" class="px-4 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg font-bold shadow-xs">Save Changes</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRM DELETE PERSON -->
+  <div id="modalConfirmDeletePerson" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-sm w-full p-6 animate-in fade-in zoom-in-95 duration-150 text-center">
+      <div class="w-12 h-12 mx-auto rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center mb-3">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+      </div>
+      <h3 class="font-bold text-base text-slate-900 dark:text-white">Delete Team Member?</h3>
+      <p id="confirmDeletePersonMessage" class="text-xs text-slate-500 dark:text-slate-400 mt-2">Are you sure you want to remove this person? They will be unassigned from all pending tasks.</p>
+      <input type="hidden" id="deleteTargetPersonId">
+      <div class="flex items-center justify-center gap-3 mt-5">
+        <button type="button" id="btnCancelConfirmDeletePerson" class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300">Cancel</button>
+        <button type="button" id="btnExecuteConfirmDeletePerson" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs">Yes, Remove Person</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT TASK -->
+  <div id="modalTask" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <h3 id="modalTaskTitle" class="font-bold text-lg text-slate-900 dark:text-white">Add New Task</h3>
+        <button id="btnModalCloseTask" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <form id="formTask" class="p-6 overflow-y-auto space-y-4 text-sm">
+        <input type="hidden" id="taskFormId">
+
+        <!-- Title -->
+        <div>
+          <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Task Title <span class="text-rose-500">*</span></label>
+          <input id="taskFormTitle" type="text" required placeholder="e.g. Build Payment Gateway Integration" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Description / Notes</label>
+          <textarea id="taskFormDesc" rows="2" placeholder="Key deliverables, blockers, pending specs..." class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
+        </div>
+
+        <!-- Category & Priority Row -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Category</label>
+            <select id="taskFormCategory" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"></select>
+          </div>
+          <div>
+            <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Priority</label>
+            <select id="taskFormPriority" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <option value="HIGH">🔥 High Priority</option>
+              <option value="MEDIUM" selected>⚡ Medium Priority</option>
+              <option value="LOW">🌱 Low Priority</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Status & Progress -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Task Status</label>
+            <select id="taskFormStatus" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <option value="PENDING">⚠️ Pending (To Do)</option>
+              <option value="IN_PROGRESS">🚀 In Progress</option>
+              <option value="REVIEW">🔍 In Review</option>
+              <option value="COMPLETED">✅ Completed</option>
+            </select>
+          </div>
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="font-medium text-slate-700 dark:text-slate-300">Progress</label>
+              <span id="taskFormProgressVal" class="text-xs font-bold text-brand-600 dark:text-brand-400">0%</span>
+            </div>
+            <input id="taskFormProgress" type="range" min="0" max="100" step="5" value="0" class="w-full accent-brand-600 mt-2">
+          </div>
+        </div>
+
+        <!-- People Involved (Multi-Assignee Selection) -->
+        <div>
+          <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">People Involved (Assignees)</label>
+          <input type="hidden" id="taskFormAssignee">
+          <div id="taskFormPeopleCheckboxContainer" class="p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg max-h-32 overflow-y-auto space-y-1.5"></div>
+        </div>
+
+        <!-- Time Estimation (Vibrant High-Contrast Blue Theme) -->
+        <div class="bg-blue-600 dark:bg-blue-700 text-white p-4 rounded-xl shadow-md border-2 border-blue-400 dark:border-blue-500">
+          <div class="flex items-center justify-between mb-3">
+            <label class="font-bold text-white text-xs uppercase tracking-wider flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span>Workload &amp; Time Estimation</span>
+            </label>
+            <span class="text-[11px] bg-blue-800 text-blue-100 px-2.5 py-0.5 rounded-full font-bold border border-blue-400/50">Timeline Calculator</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3.5">
+            <div>
+              <span class="text-xs text-blue-100 font-bold block mb-1">Estimated Hours <span class="text-blue-200">*</span></span>
+              <input id="taskFormHours" type="number" min="0.5" step="0.5" value="8" required class="w-full px-3 py-2 bg-white text-slate-900 border-2 border-blue-300 rounded-lg text-sm font-bold focus:outline-none focus:ring-2 focus:ring-white shadow-inner">
+            </div>
+            <div>
+              <span class="text-xs text-blue-100 font-bold block mb-1">Equivalent Work Days</span>
+              <div id="taskFormCalcDays" class="px-3 py-2 bg-blue-900 text-white font-bold text-xs rounded-lg flex items-center h-[38px] border border-blue-400/50 shadow-inner">1.0 Day (8h/day)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Start & Due Date -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Start Date <span class="text-rose-500">*</span></label>
+            <input id="taskFormStartDate" type="date" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div>
+            <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Target Due Date <span class="text-rose-500">*</span></label>
+            <input id="taskFormDueDate" type="date" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <button type="button" id="btnModalDeleteTask" class="px-3 py-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg font-medium text-xs hidden flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            Delete Task
+          </button>
+          <div class="flex items-center gap-2 ml-auto">
+            <button type="button" id="btnModalCancelTask" class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 font-medium">Cancel</button>
+            <button type="submit" id="btnModalSaveTask" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg font-medium shadow-xs">Save Task</button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: GITHUB HOSTING GUIDE -->
+  <div id="modalGithub" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 rounded-lg bg-slate-900 text-white">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          </div>
+          <h3 class="font-bold text-lg text-slate-900 dark:text-white">Host Free on GitHub Pages</h3>
+        </div>
+        <button id="btnModalCloseGithub" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <div class="p-6 overflow-y-auto space-y-4 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+        <p class="font-medium text-slate-900 dark:text-white">Host this entire timeline app completely free with zero subscription costs:</p>
+        
+        <ol class="space-y-3 list-decimal list-inside text-slate-700 dark:text-slate-300">
+          <li class="pl-1">
+            <strong class="text-slate-900 dark:text-white">Download <code>index.html</code></strong>:
+            <div class="mt-1 flex gap-2">
+              <button id="btnDownloadHtml" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-semibold">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Download index.html Now
+              </button>
+            </div>
+          </li>
+          <li class="pl-1"><strong class="text-slate-900 dark:text-white">Create Repository</strong>: Open GitHub, create a new public repo (e.g. <code>my-timeline</code>).</li>
+          <li class="pl-1"><strong class="text-slate-900 dark:text-white">Upload File</strong>: Click <em>Add file &rarr; Upload files</em>, drop <code>index.html</code>, and commit.</li>
+          <li class="pl-1"><strong class="text-slate-900 dark:text-white">Turn on Pages</strong>: Go to <strong>Settings</strong> &rarr; <strong>Pages</strong> &rarr; set Source to <strong>Deploy from a branch</strong> (<code>main</code> branch, <code>/ root</code>).</li>
+        </ol>
+
+        <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 rounded-xl text-emerald-800 dark:text-emerald-200 text-xs">
+          Your timeline will be live worldwide at <code>https://&lt;your-username&gt;.github.io/my-timeline/</code> with instant access from any phone or computer!
+        </div>
+      </div>
+      <div class="px-6 py-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 text-right">
+        <button id="btnModalOkGithub" class="px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg text-xs font-semibold">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PROJECT SETTINGS -->
+  <div id="modalSettings" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <h3 class="font-bold text-lg text-slate-900 dark:text-white">Project Settings</h3>
+        <button id="btnModalCloseSettings" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <div class="p-6 overflow-y-auto space-y-4 text-sm">
+        <div>
+          <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Project Name</label>
+          <input id="settingsProjectTitle" type="text" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Daily Work Hours</label>
+            <input id="settingsDailyHours" type="number" min="1" max="24" value="8" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+          </div>
+          <div>
+            <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Target Launch Date</label>
+            <input id="settingsDeadline" type="date" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+          </div>
+        </div>
+
+        <!-- Categories & Colors -->
+        <div class="pt-2">
+          <label class="block font-semibold text-slate-800 dark:text-slate-200 mb-2">Workstream Categories</label>
+          <div id="settingsCategoryList" class="space-y-2 mb-3"></div>
+          <div class="flex items-center gap-2">
+            <input id="newCatName" type="text" placeholder="New Category" class="flex-1 px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
+            <input id="newCatColor" type="color" value="#6366f1" class="w-8 h-8 rounded border-0 cursor-pointer">
+            <button id="btnAddNewCategory" class="px-3 py-1.5 text-xs bg-brand-600 text-white rounded-lg font-medium">Add</button>
+          </div>
+        </div>
+      </div>
+      <div class="px-6 py-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+        <button id="btnModalCancelSettings" class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300">Cancel</button>
+        <button id="btnModalSaveSettings" class="px-4 py-2 bg-brand-600 text-white rounded-lg font-medium">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DATA SYNC & EXPORT -->
+  <div id="modalData" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+        <h3 class="font-bold text-lg text-slate-900 dark:text-white">Backup & Sync Data</h3>
+        <button id="btnModalCloseData" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <div class="py-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
+        <p class="text-xs text-slate-400">Export your roadmap JSON to transfer or sync tasks between your mobile and desktop devices without a server.</p>
+        
+        <button id="btnExportJson" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-left font-medium">
+          <div>
+            <div class="font-semibold text-slate-900 dark:text-white">Export Project JSON</div>
+            <div class="text-xs text-slate-400">Download backup file</div>
+          </div>
+          <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+        </button>
+
+        <label class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-left font-medium cursor-pointer">
+          <div>
+            <div class="font-semibold text-slate-900 dark:text-white">Import Project JSON</div>
+            <div class="text-xs text-slate-400">Restore or load from backup file</div>
+          </div>
+          <input type="file" id="fileInputImport" accept=".json" class="hidden">
+          <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+        </label>
+
+        <button id="btnExportCsv" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-left font-medium">
+          <div>
+            <div class="font-semibold text-slate-900 dark:text-white">Export Spreadsheet (CSV)</div>
+            <div class="text-xs text-slate-400">Open in Excel or Google Sheets</div>
+          </div>
+          <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ==================== APPLICATION SCRIPT ==================== -->
+  <script>
+    (function() {
+      const STORAGE_KEY = 'chronoflow_project_data_v4';
+      const THEME_KEY = 'chronoflow_theme';
+      const ADMIN_PASS = 'RISIBU';
+
+      // 4 Engineering Workstream Categories
+      const targetCategories = [
+        { id: 'cat-hw', name: 'HARDWARE', color: '#f59e0b' },
+        { id: 'cat-mech', name: 'MECHANICAL', color: '#0d9488' },
+        { id: 'cat-sw', name: 'SOFTWARE', color: '#4f46e5' },
+        { id: 'cat-ip', name: 'IMAGE PROCESSING', color: '#9333ea' }
+      ];
+
+      // Default State
+      const defaultState = {
+        project: {
+          title: 'Engineering Project Roadmap (Hardware, Mechanical, Software & Image Processing)',
+          dailyHours: 8,
+          deadline: '2026-12-31',
+          logoIcon: 'calendar'
+        },
+        toolbarOrder: ['views', 'addTask', 'people', 'github', 'backup', 'theme'],
+        people: [
+          { id: 'p-1', name: 'Alex Rivera', role: 'Software & Pipeline Lead', color: '#4f46e5' },
+          { id: 'p-2', name: 'Sarah Chen', role: 'Hardware & Circuit Architect', color: '#f59e0b' },
+          { id: 'p-3', name: 'David Kumar', role: 'Mechanical & CAD Engineer', color: '#0d9488' },
+          { id: 'p-4', name: 'Elena Rostova', role: 'Image Processing & CV Specialist', color: '#9333ea' },
+          { id: 'p-5', name: 'Maya Patel', role: 'Systems Integration Lead', color: '#ec4899' }
+        ],
+        categories: targetCategories,
+        tasks: [
+          {
+            id: 'task-1',
+            title: 'Power Delivery Circuit & PCB Schematic Design',
+            desc: 'Multi-rail voltage regulator PCB design with reverse-polarity protection and battery telemetry.',
+            categoryId: 'cat-hw',
+            status: 'COMPLETED',
+            priority: 'HIGH',
+            hours: 24,
+            progress: 100,
+            startDate: '2026-11-01',
+            dueDate: '2026-11-06',
+            assigneeIds: ['p-2']
+          },
+          {
+            id: 'task-2',
+            title: 'Chassis Enclosure CAD & Thermal Ventilation Modeling',
+            desc: 'SolidWorks 3D CAD modeling of internal mounting brackets and passive heatsink airflow.',
+            categoryId: 'cat-mech',
+            status: 'COMPLETED',
+            priority: 'HIGH',
+            hours: 28,
+            progress: 100,
+            startDate: '2026-11-03',
+            dueDate: '2026-11-09',
+            assigneeIds: ['p-3']
+          },
+          {
+            id: 'task-3',
+            title: 'Microcontroller Sensor Interfacing & SPI/I2C Buses',
+            desc: 'Hardware bring-up of IMU, high-speed camera trigger lines, and motor drivers.',
+            categoryId: 'cat-hw',
+            status: 'IN_PROGRESS',
+            priority: 'HIGH',
+            hours: 20,
+            progress: 60,
+            startDate: '2026-11-07',
+            dueDate: '2026-11-14',
+            assigneeIds: ['p-2', 'p-1']
+          },
+          {
+            id: 'task-4',
+            title: 'Real-Time Embedded Firmware & Control Loop',
+            desc: 'RTOS task scheduler, safety interlocks, and low-latency motor control PID routines.',
+            categoryId: 'cat-sw',
+            status: 'IN_PROGRESS',
+            priority: 'HIGH',
+            hours: 32,
+            progress: 45,
+            startDate: '2026-11-08',
+            dueDate: '2026-11-18',
+            assigneeIds: ['p-1']
+          },
+          {
+            id: 'task-5',
+            title: 'Camera Rig Calibration & Lens Distortion Correction',
+            desc: 'OpenCV checkerboard intrinsic matrix calibration and stereoscopic baseline alignment.',
+            categoryId: 'cat-ip',
+            status: 'IN_PROGRESS',
+            priority: 'HIGH',
+            hours: 18,
+            progress: 40,
+            startDate: '2026-11-09',
+            dueDate: '2026-11-16',
+            assigneeIds: ['p-4']
+          },
+          {
+            id: 'task-6',
+            title: 'CNC Precision Fabrication & Enclosure Assembly',
+            desc: 'Anodized aluminum milling, vibration-damping grommets, and mechanical harness fitting.',
+            categoryId: 'cat-mech',
+            status: 'PENDING',
+            priority: 'MEDIUM',
+            hours: 24,
+            progress: 0,
+            startDate: '2026-11-15',
+            dueDate: '2026-11-22',
+            assigneeIds: ['p-3']
+          },
+          {
+            id: 'task-7',
+            title: 'Real-Time Object Detection & Feature Tracking Pipeline',
+            desc: 'TensorRT quantized edge model execution, optical flow tracking, and bounding box telemetry.',
+            categoryId: 'cat-ip',
+            status: 'PENDING',
+            priority: 'HIGH',
+            hours: 36,
+            progress: 0,
+            startDate: '2026-11-17',
+            dueDate: '2026-11-27',
+            assigneeIds: ['p-4', 'p-1']
+          },
+          {
+            id: 'task-8',
+            title: 'Web Control Dashboard & Telemetry API',
+            desc: 'Full-duplex WebSocket stream for live frame preview, sensor graphs, and remote parameter tuning.',
+            categoryId: 'cat-sw',
+            status: 'PENDING',
+            priority: 'MEDIUM',
+            hours: 24,
+            progress: 0,
+            startDate: '2026-11-22',
+            dueDate: '2026-11-30',
+            assigneeIds: ['p-1', 'p-5']
+          }
+        ]
+      };
+
+      // Normalize Categories and Tasks so only the 4 categories exist
+      function normalizeCategoriesAndTasks(loaded) {
+        const requiredNames = ['HARDWARE', 'MECHANICAL', 'SOFTWARE', 'IMAGE PROCESSING'];
+        const existingNames = (loaded.categories || []).map(c => c.name.toUpperCase());
+        const hasAllRequired = requiredNames.every(name => existingNames.includes(name));
+
+        if (!hasAllRequired) {
+          const migrationMap = {
+            'cat-core': 'cat-hw',
+            'cat-front': 'cat-sw',
+            'cat-back': 'cat-sw',
+            'cat-qa': 'cat-ip',
+            'cat-ops': 'cat-mech'
+          };
+          (loaded.tasks || []).forEach(t => {
+            if (migrationMap[t.categoryId]) {
+              t.categoryId = migrationMap[t.categoryId];
+            } else if (!targetCategories.some(c => c.id === t.categoryId)) {
+              t.categoryId = 'cat-sw';
+            }
+          });
+          loaded.categories = JSON.parse(JSON.stringify(targetCategories));
+        }
+        return loaded;
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('chronoflow_project_data_v3') || localStorage.getItem('chronoflow_project_data_v2');
+          if (raw) {
+            let parsed = JSON.parse(raw);
+            if (parsed && parsed.tasks && parsed.project) {
+              if (!parsed.people) parsed.people = defaultState.people;
+              if (!parsed.toolbarOrder) parsed.toolbarOrder = defaultState.toolbarOrder;
+              parsed = normalizeCategoriesAndTasks(parsed);
+              return parsed;
+            }
+          }
+        } catch (e) {
+          console.warn('Storage read failed:', e);
+        }
+        return JSON.parse(JSON.stringify(defaultState));
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {
+          console.warn('Storage write failed:', e);
+        }
+      }
+
+      let state = loadState();
+      let currentView = 'TIMELINE';
+      let timelineScale = 'DAYS';
+      let isAdminActive = false;
+
+      // --- TOAST NOTIFICATIONS ---
+      function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        const bg = type === 'success' ? 'bg-emerald-600 text-white' : type === 'error' ? 'bg-rose-600 text-white' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900';
+        toast.className = `${bg} px-4 py-2.5 rounded-xl shadow-lg text-xs font-semibold flex items-center gap-2 transform transition-all duration-200 translate-y-2 opacity-0 pointer-events-auto`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        
+        requestAnimationFrame(() => toast.classList.remove('translate-y-2', 'opacity-0'));
+        setTimeout(() => {
+          toast.classList.add('opacity-0', 'translate-y-2');
+          setTimeout(() => toast.remove(), 250);
+        }, 2800);
+      }
+
+      // --- THEME ---
+      function initTheme() {
+        const saved = localStorage.getItem(THEME_KEY);
+        const isDark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', isDark);
+        document.getElementById('themeIconSun').classList.toggle('hidden', !isDark);
+        document.getElementById('themeIconMoon').classList.toggle('hidden', isDark);
+      }
+
+      document.getElementById('btnThemeToggle').addEventListener('click', () => {
+        const isDark = document.documentElement.classList.toggle('dark');
+        try { localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light'); } catch (e) {}
+        document.getElementById('themeIconSun').classList.toggle('hidden', !isDark);
+        document.getElementById('themeIconMoon').classList.toggle('hidden', isDark);
+      });
+
+      // --- ADMIN PRIVILEGE MANAGEMENT ---
+      const modalAdminAuth = document.getElementById('modalAdminAuth');
+      const formAdminAuth = document.getElementById('formAdminAuth');
+      const inputAdminPassword = document.getElementById('inputAdminPassword');
+      const adminAuthError = document.getElementById('adminAuthError');
+      const btnAdminAuth = document.getElementById('btnAdminAuth');
+      const badgeAdminStatus = document.getElementById('badgeAdminStatus');
+      const btnAdminCustomizer = document.getElementById('btnAdminCustomizer');
+      const modalAdminCustomizer = document.getElementById('modalAdminCustomizer');
+
+      btnAdminAuth.addEventListener('click', () => {
+        if (isAdminActive) {
+          openAdminCustomizer();
+        } else {
+          inputAdminPassword.value = '';
+          adminAuthError.classList.add('hidden');
+          modalAdminAuth.classList.remove('hidden');
+        }
+      });
+
+      document.getElementById('btnCancelAdminAuth').addEventListener('click', () => modalAdminAuth.classList.add('hidden'));
+
+      formAdminAuth.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const pwd = inputAdminPassword.value.trim();
+        if (pwd === ADMIN_PASS) {
+          isAdminActive = true;
+          modalAdminAuth.classList.add('hidden');
+          updateAdminUI();
+          showToast('Admin Mode Unlocked with Password RISIBU!', 'success');
+        } else {
+          adminAuthError.classList.remove('hidden');
+        }
+      });
+
+      function updateAdminUI() {
+        if (isAdminActive) {
+          badgeAdminStatus.classList.remove('hidden');
+          btnAdminCustomizer.classList.remove('hidden');
+          document.getElementById('adminBtnLabel').textContent = 'Admin: Active';
+          document.getElementById('footerAdminNotice').textContent = 'Admin Mode (Privileges Active)';
+          document.getElementById('adminLockIcon').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>';
+        } else {
+          badgeAdminStatus.classList.add('hidden');
+          btnAdminCustomizer.classList.add('hidden');
+          document.getElementById('adminBtnLabel').textContent = 'Admin';
+          document.getElementById('footerAdminNotice').textContent = 'Guest Mode';
+          document.getElementById('adminLockIcon').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>';
+        }
+      }
+
+      btnAdminCustomizer.addEventListener('click', openAdminCustomizer);
+      document.getElementById('btnCloseAdminCustomizer').addEventListener('click', () => modalAdminCustomizer.classList.add('hidden'));
+
+      function openAdminCustomizer() {
+        renderAdminToolbarSettings();
+        renderAdminIconSelection();
+        modalAdminCustomizer.classList.remove('hidden');
+      }
+
+      function renderAdminIconSelection() {
+        const currentIcon = state.project.logoIcon || 'calendar';
+        document.querySelectorAll('.admin-icon-opt').forEach(btn => {
+          const iconType = btn.getAttribute('data-icon');
+          if (iconType === currentIcon) {
+            btn.className = 'admin-icon-opt p-3 rounded-xl border border-brand-500 bg-brand-50/50 dark:bg-brand-950/40 flex flex-col items-center gap-1.5';
+          } else {
+            btn.className = 'admin-icon-opt p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-400 flex flex-col items-center gap-1.5';
+          }
+          btn.onclick = () => {
+            state.project.logoIcon = iconType;
+            applyLogoIcon(iconType);
+            renderAdminIconSelection();
+          };
+        });
+      }
+
+      function applyLogoIcon(iconType) {
+        const svg = document.getElementById('appLogoSvg');
+        if (iconType === 'chart') {
+          svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>';
+        } else if (iconType === 'rocket') {
+          svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>';
+        } else if (iconType === 'compass') {
+          svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+        } else {
+          svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>';
+        }
+      }
+
+      const toolbarMeta = {
+        views: { name: 'View Switcher (Timeline/Board/List)', id: 'tbItemViews' },
+        addTask: { name: 'Add Task Button', id: 'btnNewTask' },
+        people: { name: 'People Directory Button', id: 'btnTeamDirectory' },
+        github: { name: 'Host on GitHub Guide', id: 'btnGithubGuide' },
+        backup: { name: 'Data Backup & Export', id: 'btnDataMenu' },
+        theme: { name: 'Light/Dark Theme Toggle', id: 'btnThemeToggle' }
+      };
+
+      function renderAdminToolbarSettings() {
+        const list = document.getElementById('adminToolbarList');
+        list.innerHTML = '';
+        state.toolbarOrder.forEach((key, idx) => {
+          const item = toolbarMeta[key];
+          if (!item) return;
+
+          const row = document.createElement('div');
+          row.className = 'flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-xs';
+          row.innerHTML = `
+            <span class="font-semibold text-slate-800 dark:text-slate-200">${item.name}</span>
+            <div class="flex items-center gap-1">
+              <button onclick="window.moveToolbarItem(${idx}, -1)" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 ${idx === 0 ? 'opacity-30 cursor-not-allowed' : ''}" title="Move Left/Up">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+              </button>
+              <button onclick="window.moveToolbarItem(${idx}, 1)" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 ${idx === state.toolbarOrder.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}" title="Move Right/Down">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+              </button>
+            </div>
+          `;
+          list.appendChild(row);
+        });
+      }
+
+      window.moveToolbarItem = function(idx, direction) {
+        const target = idx + direction;
+        if (target < 0 || target >= state.toolbarOrder.length) return;
+        const temp = state.toolbarOrder[idx];
+        state.toolbarOrder[idx] = state.toolbarOrder[target];
+        state.toolbarOrder[target] = temp;
+        applyToolbarArrangement();
+        renderAdminToolbarSettings();
+      };
+
+      function applyToolbarArrangement() {
+        const container = document.getElementById('dynamicToolbarContainer');
+        state.toolbarOrder.forEach(key => {
+          const meta = toolbarMeta[key];
+          if (meta) {
+            const el = document.getElementById(meta.id);
+            if (el && container.contains(el)) {
+              container.appendChild(el);
+            }
+          }
+        });
+        const adminWrap = document.getElementById('btnAdminAuth').parentElement;
+        container.appendChild(adminWrap);
+        container.appendChild(btnAdminCustomizer);
+      }
+
+      document.getElementById('btnAdminLogout').addEventListener('click', () => {
+        isAdminActive = false;
+        updateAdminUI();
+        modalAdminCustomizer.classList.add('hidden');
+        showToast('Logged out of Admin Mode', 'info');
+      });
+
+      document.getElementById('btnAdminClearCompleted').addEventListener('click', () => {
+        const count = state.tasks.filter(t => t.status === 'COMPLETED').length;
+        state.tasks = state.tasks.filter(t => t.status !== 'COMPLETED');
+        saveState();
+        refreshActiveView();
+        modalAdminCustomizer.classList.add('hidden');
+        showToast(`Archived ${count} completed tasks`, 'success');
+      });
+
+      document.getElementById('btnSaveAdminCustomizer').addEventListener('click', () => {
+        saveState();
+        modalAdminCustomizer.classList.add('hidden');
+        showToast('Admin customization applied!', 'success');
+      });
+
+      // --- PEOPLE INVOLVED DIRECTORY (EDIT, ADD, DELETE) ---
+      const modalTeam = document.getElementById('modalTeam');
+      const modalEditPerson = document.getElementById('modalEditPerson');
+      const modalConfirmDeletePerson = document.getElementById('modalConfirmDeletePerson');
+
+      document.getElementById('btnTeamDirectory').addEventListener('click', () => {
+        renderTeamModalGrid();
+        modalTeam.classList.remove('hidden');
+      });
+      document.getElementById('btnCloseModalTeam').addEventListener('click', () => modalTeam.classList.add('hidden'));
+      document.getElementById('btnDoneModalTeam').addEventListener('click', () => modalTeam.classList.add('hidden'));
+
+      document.getElementById('btnCloseModalEditPerson').addEventListener('click', () => modalEditPerson.classList.add('hidden'));
+      document.getElementById('btnCancelEditPerson').addEventListener('click', () => modalEditPerson.classList.add('hidden'));
+      document.getElementById('btnCancelConfirmDeletePerson').addEventListener('click', () => modalConfirmDeletePerson.classList.add('hidden'));
+
+      function getPerson(id) {
+        return state.people.find(p => p.id === id) || { name: 'Unassigned', role: 'Contributor', color: '#94a3b8' };
+      }
+
+      function renderTeamModalGrid() {
+        const grid = document.getElementById('teamMemberListGrid');
+        grid.innerHTML = '';
+        
+        state.people.forEach(person => {
+          const assignedTasks = state.tasks.filter(t => (t.assigneeIds || []).includes(person.id));
+          let totalHrs = 0;
+          let remainingHrs = 0;
+          assignedTasks.forEach(t => {
+            const h = parseFloat(t.hours) || 0;
+            totalHrs += h;
+            remainingHrs += (h * (1 - (t.progress || 0) / 100));
+          });
+
+          const initials = person.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+          const card = document.createElement('div');
+          card.className = 'p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-start gap-3 hover:border-slate-300 dark:hover:border-slate-700 transition-colors';
+          card.innerHTML = `
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-xs flex-shrink-0" style="background-color: ${person.color};">
+              ${initials}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-1">
+                <h5 class="font-bold text-xs text-slate-900 dark:text-white truncate" title="${person.name}">${person.name}</h5>
+                <div class="flex items-center gap-1 flex-shrink-0">
+                  <button onclick="window.openEditPersonModal('${person.id}')" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/60 dark:hover:bg-brand-900/60 text-brand-600 dark:text-brand-300 transition-colors flex items-center gap-1" title="Edit Name & Role">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                    <span>Edit</span>
+                  </button>
+                  <button onclick="window.confirmDeletePerson('${person.id}')" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 transition-colors flex items-center gap-1" title="Delete Person">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">${person.role}</p>
+              
+              <div class="mt-2.5 flex items-center justify-between text-[10px] text-slate-500 pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60">
+                <span>${assignedTasks.length} assigned task${assignedTasks.length === 1 ? '' : 's'}</span>
+                <span class="font-bold text-brand-600 dark:text-brand-400">${Math.round(remainingHrs)}h remaining (${totalHrs}h total)</span>
+              </div>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+
+        document.getElementById('badgePeopleCount').textContent = state.people.length;
+      }
+
+      window.openEditPersonModal = function(id) {
+        const person = state.people.find(p => p.id === id);
+        if (!person) return;
+
+        document.getElementById('editPersonId').value = person.id;
+        document.getElementById('editPersonName').value = person.name;
+        document.getElementById('editPersonRole').value = person.role || '';
+        document.getElementById('editPersonColor').value = person.color || '#4f46e5';
+
+        modalEditPerson.classList.remove('hidden');
+      };
+
+      document.getElementById('formEditPerson').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('editPersonId').value;
+        const name = document.getElementById('editPersonName').value.trim();
+        const role = document.getElementById('editPersonRole').value.trim() || 'Contributor';
+        const color = document.getElementById('editPersonColor').value;
+
+        if (!name) {
+          showToast('Name cannot be empty.', 'error');
+          return;
+        }
+
+        const person = state.people.find(p => p.id === id);
+        if (person) {
+          person.name = name;
+          person.role = role;
+          person.color = color;
+          saveState();
+          populatePersonSelect();
+          renderTeamModalGrid();
+          refreshActiveView();
+          modalEditPerson.classList.add('hidden');
+          showToast(`Updated "${name}" details successfully!`, 'success');
+        }
+      });
+
+      document.getElementById('btnDeletePersonFromModal').addEventListener('click', () => {
+        const id = document.getElementById('editPersonId').value;
+        modalEditPerson.classList.add('hidden');
+        window.confirmDeletePerson(id);
+      });
+
+      window.confirmDeletePerson = function(id) {
+        if (state.people.length <= 1) {
+          showToast('Cannot delete the last remaining team member.', 'error');
+          return;
+        }
+        const person = state.people.find(p => p.id === id);
+        if (!person) return;
+
+        const count = state.tasks.filter(t => (t.assigneeIds || []).includes(id)).length;
+        document.getElementById('deleteTargetPersonId').value = id;
+        document.getElementById('confirmDeletePersonMessage').textContent = `Are you sure you want to remove "${person.name}" (${person.role})? They will be unassigned from ${count} task${count === 1 ? '' : 's'}.`;
+        modalConfirmDeletePerson.classList.remove('hidden');
+      };
+
+      document.getElementById('btnExecuteConfirmDeletePerson').addEventListener('click', () => {
+        const id = document.getElementById('deleteTargetPersonId').value;
+        if (!id) return;
+        const person = state.people.find(p => p.id === id);
+        const name = person ? person.name : 'Team member';
+
+        state.people = state.people.filter(p => p.id !== id);
+        state.tasks.forEach(t => {
+          if (t.assigneeIds) t.assigneeIds = t.assigneeIds.filter(pid => pid !== id);
+        });
+
+        saveState();
+        populatePersonSelect();
+        renderTeamModalGrid();
+        refreshActiveView();
+        modalConfirmDeletePerson.classList.add('hidden');
+        showToast(`Removed "${name}" from project roster`, 'info');
+      });
+
+      window.deletePerson = function(id) {
+        window.confirmDeletePerson(id);
+      };
+
+      document.getElementById('btnAddNewPerson').addEventListener('click', () => {
+        const name = document.getElementById('inputNewPersonName').value.trim();
+        const role = document.getElementById('inputNewPersonRole').value.trim() || 'Contributor';
+        const color = document.getElementById('inputNewPersonColor').value;
+
+        if (!name) {
+          showToast('Please enter a team member name.', 'error');
+          return;
+        }
+
+        const newPerson = {
+          id: 'p-' + Date.now(),
+          name, role, color
+        };
+
+        state.people.push(newPerson);
+        document.getElementById('inputNewPersonName').value = '';
+        document.getElementById('inputNewPersonRole').value = '';
+
+        saveState();
+        populatePersonSelect();
+        renderTeamModalGrid();
+        refreshActiveView();
+        showToast(`Added "${name}" to team roster!`, 'success');
+      });
+
+      function populatePersonSelect() {
+        const select = document.getElementById('filterPerson');
+        const curr = select.value;
+        select.innerHTML = '<option value="ALL">All People Involved</option>';
+        state.people.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = `${p.name} (${p.role})`;
+          select.appendChild(opt);
+        });
+        if (curr && (curr === 'ALL' || state.people.some(p => p.id === curr))) {
+          select.value = curr;
+        } else {
+          select.value = 'ALL';
+        }
+        document.getElementById('badgePeopleCount').textContent = state.people.length;
+      }
+
+      function populateTaskFormPeopleCheckboxes(selectedIds = []) {
+        const container = document.getElementById('taskFormPeopleCheckboxContainer');
+        container.innerHTML = '';
+        state.people.forEach(p => {
+          const isChecked = selectedIds.includes(p.id);
+          const label = document.createElement('label');
+          label.className = 'flex items-center gap-2 p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700/60 cursor-pointer text-xs transition-colors';
+          label.innerHTML = `
+            <input type="checkbox" name="taskPerson" value="${p.id}" ${isChecked ? 'checked' : ''} class="rounded text-brand-600 focus:ring-brand-500">
+            <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${p.color};"></span>
+            <span class="font-medium text-slate-800 dark:text-slate-200">${p.name}</span>
+            <span class="text-slate-400 text-[10px]">(${p.role})</span>
+          `;
+          container.appendChild(label);
+        });
+      }
+
+      // --- METRICS / KPI CALCULATOR ---
+      function updateMetrics() {
+        const tasks = state.tasks;
+        const totalTasks = tasks.length;
+        const pendingTasks = tasks.filter(t => t.status !== 'COMPLETED');
+        const completedTasks = tasks.filter(t => t.status === 'COMPLETED');
+
+        let totalHours = 0;
+        let completedHours = 0;
+        let remainingHours = 0;
+
+        tasks.forEach(t => {
+          const h = parseFloat(t.hours) || 0;
+          totalHours += h;
+          const done = h * ((parseFloat(t.progress) || 0) / 100);
+          completedHours += done;
+          remainingHours += (h - done);
+        });
+
+        const dailyH = state.project.dailyHours || 8;
+        const remainingDays = (remainingHours / dailyH).toFixed(1);
+
+        document.getElementById('metricPendingCount').textContent = pendingTasks.length;
+        document.getElementById('metricPendingTotalRatio').textContent = `of ${totalTasks} tasks`;
+        document.getElementById('metricTimeRemaining').textContent = `${Math.round(remainingHours)}h`;
+        document.getElementById('metricTimeRemainingDays').textContent = `(~${remainingDays} work days)`;
+        document.getElementById('metricTotalWorkload').textContent = `${Math.round(totalHours)}h`;
+        document.getElementById('metricCompletedWorkload').textContent = `${Math.round(completedHours)}h done`;
+
+        const percent = totalHours > 0 ? Math.round((completedHours / totalHours) * 100) : 0;
+        document.getElementById('metricProgressPercentText').textContent = `${percent}%`;
+        document.getElementById('metricProgressBar').style.width = `${percent}%`;
+        document.getElementById('metricTasksDoneCount').textContent = `${completedTasks.length} of ${totalTasks} completed`;
+
+        if (state.project.deadline) {
+          const diffDays = Math.ceil((new Date(state.project.deadline) - new Date()) / 86400000);
+          document.getElementById('metricDaysToDeadline').textContent = diffDays > 0 ? `${diffDays}d to target launch` : (diffDays === 0 ? 'Target Today' : `${Math.abs(diffDays)}d overdue`);
+        } else {
+          document.getElementById('metricDaysToDeadline').textContent = '';
+        }
+
+        document.getElementById('headerProjectTitle').textContent = state.project.title;
+      }
+
+      // --- CATEGORY HELPERS ---
+      function getCategory(catId) {
+        return state.categories.find(c => c.id === catId) || state.categories[0] || { name: 'HARDWARE', color: '#f59e0b' };
+      }
+
+      function populateCategorySelects() {
+        const filterCat = document.getElementById('filterCategory');
+        const formCat = document.getElementById('taskFormCategory');
+        const curF = filterCat.value;
+        const curT = formCat.value;
+
+        filterCat.innerHTML = '<option value="ALL">All Categories</option>';
+        formCat.innerHTML = '';
+
+        state.categories.forEach(c => {
+          const o1 = document.createElement('option');
+          o1.value = c.id;
+          o1.textContent = c.name;
+          filterCat.appendChild(o1);
+
+          const o2 = document.createElement('option');
+          o2.value = c.id;
+          o2.textContent = c.name;
+          formCat.appendChild(o2);
+        });
+
+        if (curF && (curF === 'ALL' || state.categories.some(c => c.id === curF))) {
+          filterCat.value = curF;
+        } else {
+          filterCat.value = 'ALL';
+        }
+
+        if (curT && state.categories.some(c => c.id === curT)) {
+          formCat.value = curT;
+        } else if (state.categories.length > 0) {
+          formCat.value = state.categories[0].id;
+        }
+      }
+
+      // --- FILTERING ---
+      function getFilteredTasks() {
+        const query = document.getElementById('filterSearch').value.toLowerCase().trim();
+        const statusFilter = document.getElementById('filterStatus').value;
+        const catFilter = document.getElementById('filterCategory').value;
+        const priorityFilter = document.getElementById('filterPriority').value;
+        const personFilter = document.getElementById('filterPerson').value;
+
+        return state.tasks.filter(task => {
+          if (statusFilter === 'PENDING_ONLY') {
+            if (task.status === 'COMPLETED') return false;
+          } else if (statusFilter !== 'ALL' && task.status !== statusFilter) {
+            return false;
+          }
+
+          if (catFilter !== 'ALL' && task.categoryId !== catFilter) return false;
+          if (priorityFilter !== 'ALL' && task.priority !== priorityFilter) return false;
+
+          if (personFilter !== 'ALL') {
+            if (!(task.assigneeIds || []).includes(personFilter)) return false;
+          }
+
+          if (query) {
+            const cat = getCategory(task.categoryId).name.toLowerCase();
+            const peopleNames = (task.assigneeIds || []).map(pid => getPerson(pid).name.toLowerCase()).join(' ');
+            const matchTitle = task.title.toLowerCase().includes(query);
+            const matchDesc = (task.desc || '').toLowerCase().includes(query);
+            const matchPeople = peopleNames.includes(query);
+            const matchCat = cat.includes(query);
+            if (!matchTitle && !matchDesc && !matchPeople && !matchCat) return false;
+          }
+
+          return true;
+        });
+      }
+
+      // --- TIMELINE WITH STEADY STATUS & TASK COLUMN ---
+      function renderTimeline() {
+        const viewport = document.getElementById('timelineViewport');
+        const emptyState = document.getElementById('timelineEmptyState');
+        const tasks = getFilteredTasks();
+
+        if (tasks.length === 0) {
+          viewport.innerHTML = '';
+          emptyState.classList.remove('hidden');
+          return;
+        }
+        emptyState.classList.add('hidden');
+
+        let minTime = Infinity;
+        let maxTime = -Infinity;
+        tasks.forEach(t => {
+          const s = new Date(t.startDate).getTime();
+          const e = new Date(t.dueDate).getTime();
+          if (s < minTime) minTime = s;
+          if (e > maxTime) maxTime = e;
+        });
+
+        const now = new Date();
+        const nowTime = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        if (nowTime < minTime) minTime = nowTime;
+        if (nowTime > maxTime) maxTime = nowTime;
+
+        const msPerDay = 86400000;
+        minTime -= 3 * msPerDay;
+        maxTime += 7 * msPerDay;
+
+        const totalDays = Math.max(16, Math.ceil((maxTime - minTime) / msPerDay));
+        const dayWidth = timelineScale === 'DAYS' ? 44 : (timelineScale === 'WEEKS' ? 24 : 12);
+        const totalTimelineWidth = totalDays * dayWidth;
+
+        const steadyColWidth = 340;
+        viewport.style.width = `${totalTimelineWidth + steadyColWidth}px`;
+
+        function getStatusPill(status) {
+          switch (status) {
+            case 'PENDING':
+              return '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">Pending</span>';
+            case 'IN_PROGRESS':
+              return '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30">In Progress</span>';
+            case 'REVIEW':
+              return '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">Review</span>';
+            case 'COMPLETED':
+              return '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">Completed</span>';
+            default:
+              return status;
+          }
+        }
+
+        let headerHtml = `
+          <div class="sticky top-0 z-30 flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 font-semibold text-xs shadow-xs">
+            <div class="sticky-header-col bg-slate-100 dark:bg-slate-900 px-3 py-2 border-r border-slate-200 dark:border-slate-800 flex items-center justify-between shadow-xs" style="width: ${steadyColWidth}px; min-width: ${steadyColWidth}px;">
+              <span class="text-slate-600 dark:text-slate-300 uppercase tracking-wider text-[11px] font-bold">Pending Works & Status (Steady)</span>
+              <span class="text-[10px] text-slate-400">People</span>
+            </div>
+            <div class="flex-1 relative flex" style="width: ${totalTimelineWidth}px;">
+        `;
+
+        for (let i = 0; i < totalDays; i++) {
+          const d = new Date(minTime + i * msPerDay);
+          const isToday = d.toDateString() === now.toDateString();
+          const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+          const dayLabel = d.getDate();
+          const monthLabel = d.toLocaleDateString('en-US', { month: 'short' });
+
+          headerHtml += `
+            <div class="flex-shrink-0 flex flex-col items-center justify-center border-r border-slate-200/60 dark:border-slate-800/80 ${isToday ? 'bg-rose-50/90 dark:bg-rose-950/40 text-rose-600 font-bold' : (isWeekend ? 'bg-slate-100/40 dark:bg-slate-800/40 text-slate-400' : 'text-slate-600 dark:text-slate-400')}" style="width: ${dayWidth}px; height: 48px;">
+              ${timelineScale === 'DAYS' || i % 7 === 0 ? `<span class="text-[9px] leading-none text-slate-400 font-normal">${monthLabel}</span><span class="text-xs">${dayLabel}</span>` : `<span class="text-[10px]">${dayLabel}</span>`}
+            </div>
+          `;
+        }
+
+        headerHtml += `
+            </div>
+          </div>
+        `;
+
+        const todayDaysDiff = (nowTime - minTime) / msPerDay;
+        const todayLeftPx = steadyColWidth + (todayDaysDiff * dayWidth);
+
+        let rowsHtml = `<div class="relative divide-y divide-slate-100 dark:divide-slate-800/60">`;
+
+        tasks.forEach(task => {
+          const cat = getCategory(task.categoryId);
+          const sTime = new Date(task.startDate).getTime();
+          const eTime = new Date(task.dueDate).getTime();
+          const offsetDays = Math.max(0, (sTime - minTime) / msPerDay);
+          const durationDays = Math.max(1, Math.ceil((eTime - sTime) / msPerDay) + 1);
+
+          const barLeft = offsetDays * dayWidth;
+          const barWidth = durationDays * dayWidth;
+          const remainingHours = Math.round((parseFloat(task.hours) || 0) * (1 - (task.progress || 0) / 100));
+
+          const assignees = (task.assigneeIds || []).map(pid => getPerson(pid));
+          let peopleAvatarsHtml = '<div class="flex items-center -space-x-1.5">';
+          if (assignees.length > 0) {
+            assignees.forEach(p => {
+              const inits = p.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+              peopleAvatarsHtml += `
+                <div class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold border border-white dark:border-slate-800 shadow-xs" style="background-color: ${p.color};" title="${p.name} (${p.role})">
+                  ${inits}
+                </div>
+              `;
+            });
+          } else {
+            peopleAvatarsHtml += '<span class="text-[10px] text-slate-400 italic">None</span>';
+          }
+          peopleAvatarsHtml += '</div>';
+
+          rowsHtml += `
+            <div class="flex items-center hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group" style="height: 52px;">
+              <div class="sticky-col bg-white dark:bg-slate-900 px-3 py-1 flex items-center justify-between border-r border-slate-200 dark:border-slate-800 shadow-xs group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 transition-colors" style="width: ${steadyColWidth}px; min-width: ${steadyColWidth}px;">
+                <div class="min-w-0 flex-1 pr-2 cursor-pointer" onclick="window.editTask('${task.id}')">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${cat.color};"></span>
+                    <span class="font-semibold text-xs text-slate-900 dark:text-slate-100 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400" title="${task.title}">
+                      ${task.title}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2 mt-0.5 text-[10px]">
+                    ${getStatusPill(task.status)}
+                    <span class="font-mono font-bold text-slate-700 dark:text-slate-300">${remainingHours}h left</span>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  ${peopleAvatarsHtml}
+                  <button onclick="window.editTask('${task.id}')" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white" title="Edit Task">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="flex-1 relative h-full flex items-center overflow-hidden" style="width: ${totalTimelineWidth}px;">
+                <div 
+                  class="absolute h-8 rounded-lg shadow-xs cursor-pointer flex items-center px-2.5 text-white text-xs font-semibold transition-transform hover:scale-[1.01] active:scale-[0.99] overflow-hidden"
+                  style="left: ${barLeft}px; width: ${Math.max(barWidth, 42)}px; background-color: ${cat.color};"
+                  onclick="window.editTask('${task.id}')"
+                  title="${task.title} (${task.hours}h total, ${task.progress}% complete, ${remainingHours}h remaining)"
+                >
+                  <div class="absolute inset-y-0 left-0 bg-black/25 pointer-events-none transition-all duration-300" style="width: ${task.progress}%;"></div>
+                  <span class="relative z-10 truncate text-[11px] drop-shadow-xs">
+                    ${task.progress > 0 ? `${task.progress}% ` : ''}${task.title}
+                  </span>
+                  <span class="relative z-10 ml-auto pl-1 font-mono text-[10px] opacity-90 hidden sm:inline">
+                    ${task.hours}h
+                  </span>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        const todayLineHtml = `
+          <div class="absolute top-0 bottom-0 pointer-events-none z-20 flex flex-col items-center" style="left: ${todayLeftPx}px;">
+            <span class="px-1.5 py-0.5 rounded bg-rose-600 text-white font-bold text-[9px] shadow-sm uppercase tracking-wider">Today</span>
+            <div class="w-0.5 flex-1 bg-rose-500/80 dashed"></div>
+          </div>
+        `;
+
+        rowsHtml += `</div>`;
+        viewport.innerHTML = headerHtml + rowsHtml + todayLineHtml;
+      }
+
+      // --- KANBAN BOARD VIEW ---
+      function renderBoard() {
+        const tasks = getFilteredTasks();
+        const cols = {
+          PENDING: document.getElementById('boardColPending'),
+          IN_PROGRESS: document.getElementById('boardColInProgress'),
+          REVIEW: document.getElementById('boardColReview'),
+          COMPLETED: document.getElementById('boardColCompleted')
+        };
+        const counts = {
+          PENDING: document.getElementById('countBoardPending'),
+          IN_PROGRESS: document.getElementById('countBoardInProgress'),
+          REVIEW: document.getElementById('countBoardReview'),
+          COMPLETED: document.getElementById('countBoardCompleted')
+        };
+
+        Object.values(cols).forEach(col => col.innerHTML = '');
+        let tallies = { PENDING: 0, IN_PROGRESS: 0, REVIEW: 0, COMPLETED: 0 };
+
+        tasks.forEach(task => {
+          tallies[task.status] = (tallies[task.status] || 0) + 1;
+          const cat = getCategory(task.categoryId);
+          const remainingHours = Math.round((parseFloat(task.hours) || 0) * (1 - (task.progress || 0) / 100));
+
+          const assignees = (task.assigneeIds || []).map(pid => getPerson(pid));
+          let peopleAvatarsHtml = '<div class="flex items-center -space-x-1.5">';
+          assignees.forEach(p => {
+            const inits = p.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            peopleAvatarsHtml += `<div class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold border border-white dark:border-slate-800" style="background-color: ${p.color};" title="${p.name}">${inits}</div>`;
+          });
+          peopleAvatarsHtml += '</div>';
+
+          const card = document.createElement('div');
+          card.className = 'bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xs hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-2 group';
+          card.onclick = (e) => {
+            if (e.target.closest('button')) return;
+            window.editTask(task.id);
+          };
+
+          const priorityBadge = task.priority === 'HIGH' ? '<span class="text-[10px] font-bold text-rose-600 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded">High</span>' : (task.priority === 'LOW' ? '<span class="text-[10px] font-medium text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">Low</span>' : '<span class="text-[10px] font-medium text-amber-600 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded">Med</span>');
+
+          card.innerHTML = `
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-md text-white truncate max-w-[130px]" style="background-color: ${cat.color};">
+                ${cat.name}
+              </span>
+              ${priorityBadge}
+            </div>
+
+            <h4 class="font-semibold text-xs text-slate-900 dark:text-slate-100 leading-snug group-hover:text-brand-600 dark:group-hover:text-brand-400">
+              ${task.title}
+            </h4>
+
+            ${task.desc ? `<p class="text-[11px] text-slate-500 line-clamp-2">${task.desc}</p>` : ''}
+
+            <div class="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1.5 border-t border-slate-100 dark:border-slate-700/60">
+              <div class="flex items-center gap-1.5">
+                ${peopleAvatarsHtml}
+                <span class="font-bold text-slate-700 dark:text-slate-300">${task.status === 'COMPLETED' ? 'Done' : `${remainingHours}h left`}</span>
+              </div>
+              <span class="text-[10px] font-mono text-slate-400">${task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</span>
+            </div>
+
+            <div class="flex items-center justify-between pt-1 text-slate-400">
+              <span class="text-[10px] font-semibold">${task.progress}% done</span>
+              <div class="flex items-center gap-1">
+                ${task.status !== 'PENDING' ? `<button onclick="window.advanceTaskStatus('${task.id}', -1)" class="p-1 hover:text-slate-700 dark:hover:text-white" title="Move Back"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>` : ''}
+                ${task.status !== 'COMPLETED' ? `<button onclick="window.advanceTaskStatus('${task.id}', 1)" class="p-1 hover:text-brand-600" title="Move Forward"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>` : ''}
+              </div>
+            </div>
+          `;
+
+          if (cols[task.status]) cols[task.status].appendChild(card);
+        });
+
+        counts.PENDING.textContent = tallies.PENDING;
+        counts.IN_PROGRESS.textContent = tallies.IN_PROGRESS;
+        counts.REVIEW.textContent = tallies.REVIEW;
+        counts.COMPLETED.textContent = tallies.COMPLETED;
+      }
+
+      // --- DETAILED LIST VIEW ---
+      function renderList() {
+        const tbody = document.getElementById('taskListTableBody');
+        const emptyState = document.getElementById('listEmptyState');
+        const tasks = getFilteredTasks();
+
+        if (tasks.length === 0) {
+          tbody.innerHTML = '';
+          emptyState.classList.remove('hidden');
+          return;
+        }
+        emptyState.classList.add('hidden');
+
+        let html = '';
+        tasks.forEach(task => {
+          const cat = getCategory(task.categoryId);
+          const remainingHours = Math.round((parseFloat(task.hours) || 0) * (1 - (task.progress || 0) / 100));
+
+          const assignees = (task.assigneeIds || []).map(pid => getPerson(pid));
+          let peoplePills = assignees.map(p => `
+            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+              <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${p.color};"></span>
+              ${p.name.split(' ')[0]}
+            </span>
+          `).join('') || '<span class="text-xs text-slate-400">—</span>';
+
+          const statusBadge = {
+            PENDING: '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-600">Pending</span>',
+            IN_PROGRESS: '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-brand-50 dark:bg-brand-950/60 text-brand-600">In Progress</span>',
+            REVIEW: '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-purple-50 dark:bg-purple-950/60 text-purple-600">Review</span>',
+            COMPLETED: '<span class="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600">Completed</span>'
+          }[task.status] || task.status;
+
+          html += `
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+              <td class="px-4 py-3 cursor-pointer" onclick="window.editTask('${task.id}')">
+                <div class="font-semibold text-slate-900 dark:text-white">${task.title}</div>
+                ${task.desc ? `<div class="text-xs text-slate-400 truncate max-w-sm">${task.desc}</div>` : ''}
+              </td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium" style="background-color: ${cat.color}20; color: ${cat.color};">
+                  <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${cat.color};"></span>
+                  ${cat.name}
+                </span>
+              </td>
+              <td class="px-4 py-3">${statusBadge}</td>
+              <td class="px-4 py-3 text-xs font-medium">${task.priority}</td>
+              <td class="px-4 py-3"><div class="flex flex-wrap gap-1">${peoplePills}</div></td>
+              <td class="px-4 py-3 font-mono text-xs text-slate-500">${task.startDate} &rarr; ${task.dueDate}</td>
+              <td class="px-4 py-3 text-right font-mono font-medium">${task.hours}h</td>
+              <td class="px-4 py-3 text-right font-mono font-bold ${remainingHours > 0 ? 'text-brand-600 dark:text-brand-400' : 'text-emerald-500'}">${remainingHours}h</td>
+              <td class="px-4 py-3 text-center">
+                <div class="flex items-center gap-2 justify-center">
+                  <div class="w-16 bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                    <div class="bg-brand-600 h-2 rounded-full" style="width: ${task.progress}%"></div>
+                  </div>
+                  <span class="text-xs font-mono">${task.progress}%</span>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-right">
+                <button onclick="window.editTask('${task.id}')" class="text-slate-400 hover:text-brand-600 p-1">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+
+        tbody.innerHTML = html;
+      }
+
+      function refreshActiveView() {
+        updateMetrics();
+        if (currentView === 'TIMELINE') renderTimeline();
+        else if (currentView === 'BOARD') renderBoard();
+        else if (currentView === 'LIST') renderList();
+      }
+
+      // --- TASK MODAL HOOKS ---
+      window.editTask = function(taskId) {
+        const task = state.tasks.find(t => t.id === taskId);
+        if (!task) return;
+
+        document.getElementById('modalTaskTitle').textContent = 'Edit Task';
+        document.getElementById('taskFormId').value = task.id;
+        document.getElementById('taskFormTitle').value = task.title;
+        document.getElementById('taskFormDesc').value = task.desc || '';
+        document.getElementById('taskFormCategory').value = task.categoryId;
+        document.getElementById('taskFormPriority').value = task.priority;
+        document.getElementById('taskFormStatus').value = task.status;
+        document.getElementById('taskFormProgress').value = task.progress || 0;
+        document.getElementById('taskFormProgressVal').textContent = `${task.progress || 0}%`;
+        document.getElementById('taskFormHours').value = task.hours;
+        document.getElementById('taskFormStartDate').value = task.startDate;
+        document.getElementById('taskFormDueDate').value = task.dueDate;
+
+        populateTaskFormPeopleCheckboxes(task.assigneeIds || []);
+        calcHoursToDays();
+        document.getElementById('btnModalDeleteTask').classList.remove('hidden');
+        document.getElementById('modalTask').classList.remove('hidden');
+      };
+
+      window.advanceTaskStatus = function(taskId, delta) {
+        const order = ['PENDING', 'IN_PROGRESS', 'REVIEW', 'COMPLETED'];
+        const task = state.tasks.find(t => t.id === taskId);
+        if (!task) return;
+
+        const currIdx = order.indexOf(task.status);
+        const nextIdx = Math.max(0, Math.min(order.length - 1, currIdx + delta));
+        task.status = order[nextIdx];
+
+        if (task.status === 'COMPLETED') task.progress = 100;
+        else if (task.status === 'PENDING' && task.progress === 100) task.progress = 0;
+
+        saveState();
+        refreshActiveView();
+        showToast(`Moved to ${task.status.replace('_', ' ')}`, 'info');
+      };
+
+      function calcHoursToDays() {
+        const h = parseFloat(document.getElementById('taskFormHours').value) || 0;
+        const perDay = state.project.dailyHours || 8;
+        const days = (h / perDay).toFixed(1);
+        document.getElementById('taskFormCalcDays').textContent = `${days} Day${days === '1.0' ? '' : 's'} (${perDay}h/day)`;
+      }
+
+      document.getElementById('taskFormHours').addEventListener('input', calcHoursToDays);
+      document.getElementById('taskFormProgress').addEventListener('input', (e) => {
+        document.getElementById('taskFormProgressVal').textContent = `${e.target.value}%`;
+      });
+
+      function openNewTaskModal(defaultStatus = 'PENDING') {
+        document.getElementById('modalTaskTitle').textContent = 'Add New Task';
+        document.getElementById('taskFormId').value = '';
+        document.getElementById('formTask').reset();
+
+        const todayStr = new Date().toISOString().split('T')[0];
+        const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+
+        document.getElementById('taskFormStartDate').value = todayStr;
+        document.getElementById('taskFormDueDate').value = nextWeek;
+        document.getElementById('taskFormHours').value = '16';
+        document.getElementById('taskFormStatus').value = defaultStatus;
+        document.getElementById('taskFormProgress').value = '0';
+        document.getElementById('taskFormProgressVal').textContent = '0%';
+        populateTaskFormPeopleCheckboxes([]);
+        calcHoursToDays();
+
+        document.getElementById('btnModalDeleteTask').classList.add('hidden');
+        document.getElementById('modalTask').classList.remove('hidden');
+      }
+
+      document.getElementById('btnNewTask').addEventListener('click', () => openNewTaskModal('PENDING'));
+      document.querySelectorAll('.btnQuickAddInCol').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          openNewTaskModal(e.currentTarget.getAttribute('data-status'));
+        });
+      });
+
+      document.getElementById('formTask').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('taskFormId').value;
+        const title = document.getElementById('taskFormTitle').value.trim();
+        const desc = document.getElementById('taskFormDesc').value.trim();
+        const categoryId = document.getElementById('taskFormCategory').value;
+        const priority = document.getElementById('taskFormPriority').value;
+        const status = document.getElementById('taskFormStatus').value;
+        const progress = parseInt(document.getElementById('taskFormProgress').value, 10);
+        const hours = parseFloat(document.getElementById('taskFormHours').value) || 1;
+        const startDate = document.getElementById('taskFormStartDate').value;
+        const dueDate = document.getElementById('taskFormDueDate').value;
+
+        const checkedAssignees = Array.from(document.querySelectorAll('input[name="taskPerson"]:checked')).map(cb => cb.value);
+
+        if (new Date(dueDate) < new Date(startDate)) {
+          showToast('Due date cannot be earlier than start date.', 'error');
+          return;
+        }
+
+        if (id) {
+          const task = state.tasks.find(t => t.id === id);
+          if (task) {
+            Object.assign(task, { title, desc, categoryId, priority, status, progress, hours, startDate, dueDate, assigneeIds: checkedAssignees });
+            showToast('Task updated!', 'success');
+          }
+        } else {
+          state.tasks.push({
+            id: 'task-' + Date.now(),
+            title, desc, categoryId, priority, status, progress, hours, startDate, dueDate, assigneeIds: checkedAssignees
+          });
+          showToast('Task added to timeline!', 'success');
+        }
+
+        saveState();
+        refreshActiveView();
+        document.getElementById('modalTask').classList.add('hidden');
+      });
+
+      document.getElementById('btnModalDeleteTask').addEventListener('click', () => {
+        const id = document.getElementById('taskFormId').value;
+        if (!id) return;
+        state.tasks = state.tasks.filter(t => t.id !== id);
+        saveState();
+        refreshActiveView();
+        document.getElementById('modalTask').classList.add('hidden');
+        showToast('Task deleted', 'info');
+      });
+
+      document.getElementById('btnModalCloseTask').addEventListener('click', () => document.getElementById('modalTask').classList.add('hidden'));
+      document.getElementById('btnModalCancelTask').addEventListener('click', () => document.getElementById('modalTask').classList.add('hidden'));
+
+      // --- SWITCH VIEWS ---
+      const viewBtnTimeline = document.getElementById('viewBtnTimeline');
+      const viewBtnBoard = document.getElementById('viewBtnBoard');
+      const viewBtnList = document.getElementById('viewBtnList');
+
+      const viewTimelineContainer = document.getElementById('viewTimelineContainer');
+      const viewBoardContainer = document.getElementById('viewBoardContainer');
+      const viewListContainer = document.getElementById('viewListContainer');
+      const timelineControlBar = document.getElementById('timelineControlBar');
+
+      function switchView(viewName) {
+        currentView = viewName;
+        [viewBtnTimeline, viewBtnBoard, viewBtnList].forEach(btn => {
+          btn.className = 'px-3 py-1 rounded-md font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5';
+        });
+
+        viewTimelineContainer.classList.add('hidden');
+        viewBoardContainer.classList.add('hidden');
+        viewListContainer.classList.add('hidden');
+        timelineControlBar.classList.add('hidden');
+
+        const activeClasses = 'px-3 py-1 rounded-md font-medium transition-all bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs flex items-center gap-1.5';
+
+        if (viewName === 'TIMELINE') {
+          viewBtnTimeline.className = activeClasses;
+          viewTimelineContainer.classList.remove('hidden');
+          timelineControlBar.classList.remove('hidden');
+          renderTimeline();
+        } else if (viewName === 'BOARD') {
+          viewBtnBoard.className = activeClasses;
+          viewBoardContainer.classList.remove('hidden');
+          renderBoard();
+        } else if (viewName === 'LIST') {
+          viewBtnList.className = activeClasses;
+          viewListContainer.classList.remove('hidden');
+          renderList();
+        }
+      }
+
+      viewBtnTimeline.addEventListener('click', () => switchView('TIMELINE'));
+      viewBtnBoard.addEventListener('click', () => switchView('BOARD'));
+      viewBtnList.addEventListener('click', () => switchView('LIST'));
+
+      // --- SCALE SWITCHER ---
+      const scaleBtnDays = document.getElementById('scaleBtnDays');
+      const scaleBtnWeeks = document.getElementById('scaleBtnWeeks');
+      const scaleBtnMonths = document.getElementById('scaleBtnMonths');
+
+      function setScale(scale) {
+        timelineScale = scale;
+        [scaleBtnDays, scaleBtnWeeks, scaleBtnMonths].forEach(btn => {
+          btn.className = 'px-2.5 py-1 rounded text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white';
+        });
+        const active = 'px-2.5 py-1 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs';
+        if (scale === 'DAYS') scaleBtnDays.className = active;
+        if (scale === 'WEEKS') scaleBtnWeeks.className = active;
+        if (scale === 'MONTHS') scaleBtnMonths.className = active;
+        renderTimeline();
+      }
+
+      scaleBtnDays.addEventListener('click', () => setScale('DAYS'));
+      scaleBtnWeeks.addEventListener('click', () => setScale('WEEKS'));
+      scaleBtnMonths.addEventListener('click', () => setScale('MONTHS'));
+
+      document.getElementById('btnScrollToday').addEventListener('click', () => {
+        const scrollArea = document.getElementById('timelineScrollArea');
+        scrollArea.scrollTo({ left: 340, behavior: 'smooth' });
+      });
+
+      // Filter events
+      document.getElementById('filterSearch').addEventListener('input', refreshActiveView);
+      document.getElementById('filterStatus').addEventListener('change', refreshActiveView);
+      document.getElementById('filterPerson').addEventListener('change', refreshActiveView);
+      document.getElementById('filterCategory').addEventListener('change', refreshActiveView);
+      document.getElementById('filterPriority').addEventListener('change', refreshActiveView);
+
+      // --- PROJECT SETTINGS ---
+      const modalSettings = document.getElementById('modalSettings');
+      document.getElementById('btnEditProjectTitle').addEventListener('click', openSettings);
+      document.getElementById('headerProjectTitle').addEventListener('click', openSettings);
+
+      function openSettings() {
+        document.getElementById('settingsProjectTitle').value = state.project.title;
+        document.getElementById('settingsDailyHours').value = state.project.dailyHours || 8;
+        document.getElementById('settingsDeadline').value = state.project.deadline || '';
+        renderCategoryListInSettings();
+        modalSettings.classList.remove('hidden');
+      }
+
+      function renderCategoryListInSettings() {
+        const list = document.getElementById('settingsCategoryList');
+        list.innerHTML = '';
+        state.categories.forEach(c => {
+          const row = document.createElement('div');
+          row.className = 'flex items-center gap-2 bg-slate-50 dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700';
+          row.innerHTML = `
+            <input type="color" value="${c.color}" class="w-6 h-6 rounded border-0 cursor-pointer" onchange="window.updateCatColor('${c.id}', this.value)">
+            <span class="flex-1 text-xs font-semibold text-slate-800 dark:text-slate-200">${c.name}</span>
+            ${state.categories.length > 1 ? `<button onclick="window.deleteCat('${c.id}')" class="text-slate-400 hover:text-rose-500 p-1 text-xs"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>` : ''}
+          `;
+          list.appendChild(row);
+        });
+      }
+
+      window.updateCatColor = function(catId, color) {
+        const cat = state.categories.find(c => c.id === catId);
+        if (cat) cat.color = color;
+      };
+
+      window.deleteCat = function(catId) {
+        if (state.categories.length <= 1) return;
+        state.categories = state.categories.filter(c => c.id !== catId);
+        renderCategoryListInSettings();
+      };
+
+      document.getElementById('btnAddNewCategory').addEventListener('click', () => {
+        const nameInput = document.getElementById('newCatName');
+        const colorInput = document.getElementById('newCatColor');
+        const name = nameInput.value.trim().toUpperCase();
+        if (!name) return;
+
+        state.categories.push({ id: 'cat-' + Date.now(), name, color: colorInput.value });
+        nameInput.value = '';
+        renderCategoryListInSettings();
+      });
+
+      document.getElementById('btnModalSaveSettings').addEventListener('click', () => {
+        state.project.title = document.getElementById('settingsProjectTitle').value.trim() || 'Engineering Project Roadmap';
+        state.project.dailyHours = parseInt(document.getElementById('settingsDailyHours').value, 10) || 8;
+        state.project.deadline = document.getElementById('settingsDeadline').value;
+        saveState();
+        populateCategorySelects();
+        refreshActiveView();
+        modalSettings.classList.add('hidden');
+        showToast('Settings saved!', 'success');
+      });
+
+      document.getElementById('btnModalCloseSettings').addEventListener('click', () => modalSettings.classList.add('hidden'));
+      document.getElementById('btnModalCancelSettings').addEventListener('click', () => modalSettings.classList.add('hidden'));
+
+      // --- GITHUB PAGES GUIDE ---
+      const modalGithub = document.getElementById('modalGithub');
+      document.getElementById('btnGithubGuide').addEventListener('click', () => modalGithub.classList.remove('hidden'));
+      document.getElementById('btnModalCloseGithub').addEventListener('click', () => modalGithub.classList.add('hidden'));
+      document.getElementById('btnModalOkGithub').addEventListener('click', () => modalGithub.classList.add('hidden'));
+
+      document.getElementById('btnDownloadHtml').addEventListener('click', () => {
+        const htmlContent = document.documentElement.outerHTML;
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'index.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('index.html downloaded!', 'success');
+      });
+
+      // --- DATA MODAL & BACKUP ---
+      const modalData = document.getElementById('modalData');
+      document.getElementById('btnDataMenu').addEventListener('click', () => modalData.classList.remove('hidden'));
+      document.getElementById('btnModalCloseData').addEventListener('click', () => modalData.classList.add('hidden'));
+      document.getElementById('btnQuickBackup').addEventListener('click', exportProjectJson);
+
+      function exportProjectJson() {
+        const json = JSON.stringify(state, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `chronoflow_${state.project.title.toLowerCase().replace(/[^a-z0-9]/g, '_')}_backup.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Project JSON exported!', 'success');
+      }
+
+      document.getElementById('btnExportJson').addEventListener('click', exportProjectJson);
+
+      document.getElementById('btnExportCsv').addEventListener('click', () => {
+        let csv = 'Task ID,Title,Category,Status,Priority,People Involved,Start Date,Due Date,Estimated Hours,Progress %,Description\n';
+        state.tasks.forEach(t => {
+          const cat = getCategory(t.categoryId).name;
+          const people = (t.assigneeIds || []).map(pid => getPerson(pid).name).join('; ');
+          const cleanTitle = `"${(t.title || '').replace(/"/g, '""')}"`;
+          const cleanDesc = `"${(t.desc || '').replace(/"/g, '""')}"`;
+          csv += `${t.id},${cleanTitle},${cat},${t.status},${t.priority},"${people}",${t.startDate},${t.dueDate},${t.hours},${t.progress},${cleanDesc}\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `timeline_tasks_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('CSV Exported!', 'success');
+      });
+
+      document.getElementById('fileInputImport').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            let imported = JSON.parse(event.target.result);
+            if (imported && Array.isArray(imported.tasks) && imported.project) {
+              imported = normalizeCategoriesAndTasks(imported);
+              state = imported;
+              if (!state.people) state.people = defaultState.people;
+              if (!state.toolbarOrder) state.toolbarOrder = defaultState.toolbarOrder;
+              saveState();
+              applyLogoIcon(state.project.logoIcon || 'calendar');
+              applyToolbarArrangement();
+              populateCategorySelects();
+              populatePersonSelect();
+              refreshActiveView();
+              modalData.classList.add('hidden');
+              showToast('Project imported successfully!', 'success');
+            } else {
+              showToast('Invalid JSON structure.', 'error');
+            }
+          } catch (err) {
+            showToast('Failed to parse JSON file.', 'error');
+          }
+        };
+        reader.readAsText(file);
+      });
+
+      document.getElementById('btnRestoreSample').addEventListener('click', () => {
+        state = JSON.parse(JSON.stringify(defaultState));
+        saveState();
+        applyLogoIcon('calendar');
+        applyToolbarArrangement();
+        populateCategorySelects();
+        populatePersonSelect();
+        refreshActiveView();
+        showToast('Sample Roadmap restored!', 'info');
+      });
+
+      // --- INIT ---
+      initTheme();
+      applyLogoIcon(state.project.logoIcon || 'calendar');
+      applyToolbarArrangement();
+      populateCategorySelects();
+      populatePersonSelect();
+      refreshActiveView();
+    })();
+  </script>
+</body>
+</html>
